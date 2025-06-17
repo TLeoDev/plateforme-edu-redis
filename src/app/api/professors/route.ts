@@ -1,16 +1,18 @@
 //api/professors/route.ts
 import { NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 import redis from '@/lib/redis';
 
 export async function POST(request: Request) {
-    const { professorId, name, courses = [] } = await request.json();
+    const { name, courses = [] } = await request.json();
+    const professorId = uuidv4();
 
     await redis.hset(`professor:${professorId}`, {
         name,
         courses: JSON.stringify(courses),
     });
 
-    return NextResponse.json({ message: 'Professor profile created' });
+    return NextResponse.json({ message: 'Professor profile created', professorId });
 }
 
 export async function GET(request: Request) {
@@ -25,7 +27,7 @@ export async function GET(request: Request) {
         }
 
         professor.courses = JSON.parse(professor.courses || '[]');
-        return NextResponse.json(professor);
+        return NextResponse.json({ professorId, ...professor });
     } else {
         const keys = await redis.keys('professor:*');
         const professors = [];
@@ -33,7 +35,8 @@ export async function GET(request: Request) {
         for (const key of keys) {
             const professor = await redis.hgetall(key);
             professor.courses = JSON.parse(professor.courses || '[]');
-            professors.push(professor);
+            const id = key.split(':')[1];
+            professors.push({ professorId: id, ...professor });
         }
 
         return NextResponse.json(professors);
@@ -51,4 +54,21 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Professor not found' }, { status: 404 });
     }
     return NextResponse.json({ message: 'Professor deleted' });
+}
+
+export async function PATCH(request: Request) {
+    const { professorId, ...updates } = await request.json();
+    const professor = await redis.hgetall(`professor:${professorId}`);
+
+    if (Object.keys(professor).length === 0) {
+        return NextResponse.json({ error: 'Professor not found' }, { status: 404 });
+    }
+
+    if (updates.courses) {
+        updates.courses = JSON.stringify(updates.courses);
+    }
+
+    await redis.hset(`professor:${professorId}`, updates);
+
+    return NextResponse.json({ message: 'Professor updated' });
 }

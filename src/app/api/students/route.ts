@@ -1,16 +1,18 @@
 //api/students/route.ts
 import { NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 import redis from '@/lib/redis';
 
 export async function POST(request: Request) {
-    const { studentId, name, courses = [] } = await request.json();
+    const { name, courses = [] } = await request.json();
+    const studentId = uuidv4();
 
     await redis.hset(`student:${studentId}`, {
         name,
         courses: JSON.stringify(courses),
     });
 
-    return NextResponse.json({ message: 'Student profile created' });
+    return NextResponse.json({ message: 'Student profile created', studentId });
 }
 
 export async function PUT(request: Request) {
@@ -68,7 +70,7 @@ export async function GET(request: Request) {
         }
 
         student.courses = JSON.parse(student.courses || '[]');
-        return NextResponse.json(student);
+        return NextResponse.json({ studentId, ...student });
     } else {
         const keys = await redis.keys('student:*');
         const students = [];
@@ -76,7 +78,9 @@ export async function GET(request: Request) {
         for (const key of keys) {
             const student = await redis.hgetall(key);
             student.courses = JSON.parse(student.courses || '[]');
-            students.push(student);
+            // Ajout de l'id extrait de la clé
+            const id = key.split(':')[1];
+            students.push({ studentId: id, ...student });
         }
 
         return NextResponse.json(students);
