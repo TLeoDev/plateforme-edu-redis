@@ -31,7 +31,6 @@ export default function ProfessorProfilePage() {
             const data = await res.json();
             setProfessor(data);
 
-            // Récupère les titres des cours enseignés
             if (data.courses.length > 0) {
                 const resCourses = await fetch('/api/courses');
                 const all = await resCourses.json();
@@ -42,11 +41,17 @@ export default function ProfessorProfilePage() {
         fetchData();
     }, [professorId, router]);
 
+    const handleDelete = async () => {
+        if (!window.confirm('Supprimer ce professeur ?')) return;
+        await fetch(`/api/professors?professorId=${professorId}`, { method: 'DELETE' });
+        router.push('/professor');
+    };
+
     if (loading) return <div>Chargement...</div>;
     if (!professor) return <div>Professeur non trouvé.</div>;
 
     return (
-        <div className="p-8">
+        <div className="p-8 max-w-xl mx-auto">
             <h1 className="text-2xl font-bold mb-2">{professor.name}</h1>
             <p><b>ID :</b> {professor.professorId}</p>
             <div className="my-4">
@@ -57,12 +62,26 @@ export default function ProfessorProfilePage() {
                         : <li>Aucun cours</li>}
                 </ul>
             </div>
-            <button
-                onClick={() => router.push(`/professor/${professorId}/edit`)}
-                className="bg-yellow-500 text-white px-4 py-2 rounded mt-4"
-            >
-                Éditer
-            </button>
+            <div className="flex gap-4 mt-6">
+                <button
+                    onClick={handleDelete}
+                    className="bg-red-600 text-white px-4 py-2 rounded"
+                >
+                    Supprimer
+                </button>
+                <button
+                    onClick={() => router.push(`/professor/${professorId}/edit`)}
+                    className="bg-yellow-500 text-white px-4 py-2 rounded"
+                >
+                    Éditer
+                </button>
+                <button
+                    onClick={() => router.push('/professor')}
+                    className="bg-gray-300 px-4 py-2 rounded"
+                >
+                    Retour
+                </button>
+            </div>
         </div>
     );
 }

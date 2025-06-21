@@ -5,6 +5,6 @@ export interface Course {
     level: string;
     summary?: string;
     placesAvailable?: number;
+    placesTotal?: number;
     students?: string[];
 }
-

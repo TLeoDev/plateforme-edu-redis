@@ -7,12 +7,29 @@ export async function POST(request: Request) {
     const { name, courses = [] } = await request.json();
     const studentId = uuidv4();
 
+    // Création de l'étudiant
     await redis.hset(`student:${studentId}`, {
         name,
         courses: JSON.stringify(courses),
     });
 
-    return NextResponse.json({ message: 'Student profile created', studentId });
+    // Pour chaque cours, ajouter l'étudiant à la liste des étudiants du cours
+    for (const courseId of courses) {
+        const courseKey = `course:${courseId}`;
+        const course = await redis.hgetall(courseKey);
+        if (Object.keys(course).length > 0) {
+            let students = [];
+            if (course.students) {
+                students = JSON.parse(course.students);
+            }
+            if (!students.includes(studentId)) {
+                students.push(studentId);
+                await redis.hset(courseKey, { ...course, students: JSON.stringify(students) });
+            }
+        }
+    }
+
+    return NextResponse.json({ message: 'Student created', studentId });
 }
 
 export async function PUT(request: Request) {
@@ -88,18 +105,53 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-    const { studentId, ...updates } = await request.json();
-    const student = await redis.hgetall(`student:${studentId}`);
+    const { studentId, name, courses: newCourses } = await request.json();
+    const studentKey = `student:${studentId}`;
+    const student = await redis.hgetall(studentKey);
 
     if (Object.keys(student).length === 0) {
         return NextResponse.json({ error: 'Student not found' }, { status: 404 });
     }
 
-    if (updates.courses) {
-        updates.courses = JSON.stringify(updates.courses);
-    }
+    const oldCourses = JSON.parse(student.courses || '[]');
 
-    await redis.hset(`student:${studentId}`, updates);
+    // Met à jour l'étudiant
+    await redis.hset(studentKey, {
+        name,
+        courses: JSON.stringify(newCourses),
+    });
+
+    // Synchronise les cours
+    const added = newCourses.filter((c: string) => !oldCourses.includes(c));
+    const removed = oldCourses.filter((c: string) => !newCourses.includes(c));
+
+    for (const courseId of added) {
+        const courseKey = `course:${courseId}`;
+        const course = await redis.hgetall(courseKey);
+        const students = JSON.parse(course.students || '[]');
+        if (!students.includes(studentId)) {
+            students.push(studentId);
+            await redis.hset(courseKey, {
+                students: JSON.stringify(students),
+                placesAvailable: Math.max(
+                    0,
+                    (Number(course.placesAvailable) || Number(course.placesTotal) || 0) - 1
+                ),
+            });
+        }
+    }
+    for (const courseId of removed) {
+        const courseKey = `course:${courseId}`;
+        const course = await redis.hgetall(courseKey);
+        const students = (JSON.parse(course.students || '[]') as string[]).filter(id => id !== studentId);
+        await redis.hset(courseKey, {
+            students: JSON.stringify(students),
+            placesAvailable: Math.max(
+                0,
+                (Number(course.placesAvailable) || Number(course.placesTotal) || 0) - 1
+            ),
+        });
+    }
 
     return NextResponse.json({ message: 'Student updated' });
 }
@@ -110,6 +162,30 @@ export async function DELETE(request: Request) {
     if (!studentId) {
         return NextResponse.json({ error: 'Missing studentId' }, { status: 400 });
     }
+
+    // Récupère les cours de l'étudiant
+    const student = await redis.hgetall(`student:${studentId}`);
+    if (student && student.courses) {
+        const courses = JSON.parse(student.courses);
+        for (const courseId of courses) {
+            const courseKey = `course:${courseId}`;
+            const course = await redis.hgetall(courseKey);
+            if (Object.keys(course).length > 0) {
+                // Retire l'étudiant de la liste
+                const students = (JSON.parse(course.students || '[]') as string[]).filter(id => id !== studentId);
+                // Incrémente les places disponibles
+                const placesAvailable = Math.min(
+                    (Number(course.placesAvailable) || 0) + 1,
+                    Number(course.placesTotal) || 0
+                );
+                await redis.hset(courseKey, {
+                    students: JSON.stringify(students),
+                    placesAvailable: placesAvailable.toString(),
+                });
+            }
+        }
+    }
+
     const deleted = await redis.del(`student:${studentId}`);
     if (deleted === 0) {
         return NextResponse.json({ error: 'Student not found' }, { status: 404 });

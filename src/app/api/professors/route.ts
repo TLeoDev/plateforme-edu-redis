@@ -49,6 +49,20 @@ export async function DELETE(request: Request) {
     if (!professorId) {
         return NextResponse.json({ error: 'Missing professorId' }, { status: 400 });
     }
+
+    // Récupère les cours du professeur
+    const professor = await redis.hgetall(`professor:${professorId}`);
+    if (professor && professor.courses) {
+        const courses = JSON.parse(professor.courses);
+        for (const courseId of courses) {
+            const courseKey = `course:${courseId}`;
+            const course = await redis.hgetall(courseKey);
+            if (Object.keys(course).length > 0) {
+                await redis.hset(courseKey, { ...course, teacher: "" });
+            }
+        }
+    }
+
     const deleted = await redis.del(`professor:${professorId}`);
     if (deleted === 0) {
         return NextResponse.json({ error: 'Professor not found' }, { status: 404 });
