@@ -35,6 +35,17 @@ export async function POST(request: Request) {
     }
     // ------------------------------------------------
 
+    // --- Publie une news sur la création du cours ---
+    const news = {
+        courseId,
+        message: `Nouveau cours créé : ${title}`,
+        timestamp: new Date().toISOString(),
+    };
+    await redis.lpush('news', JSON.stringify(news));
+    await redis.publish(`course:news:${courseId}`, JSON.stringify(news));
+    await redis.publish('news:all', JSON.stringify(news));
+    // ------------------------------------------------
+
     return NextResponse.json({ message: 'Course added with expiration', courseId });
 }
 
@@ -154,6 +165,17 @@ export async function PUT(request: Request) {
         ...updates,
         placesTotal: newPlacesTotal.toString(),
     });
+
+    // --- Publie une news sur la modification du cours ---
+    const news = {
+        courseId,
+        message: `Le cours "${updates.title || course.title}" a été mis à jour.`,
+        timestamp: new Date().toISOString(),
+    };
+    await redis.lpush('news', JSON.stringify(news));
+    await redis.publish(`course:news:${courseId}`, JSON.stringify(news));
+    await redis.publish('news:all', JSON.stringify(news));
+    // ---------------------------------------------------
 
     return NextResponse.json({ message: 'Course updated' });
 }

@@ -1,5 +1,7 @@
 export interface Student {
     studentId: string;
-    name: string;
+    nom: string;
+    prenom: string;
+    mail?: string;
     courses: string[];
 }

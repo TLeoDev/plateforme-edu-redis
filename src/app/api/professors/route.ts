@@ -4,11 +4,13 @@ import { v4 as uuidv4 } from 'uuid';
 import redis from '@/lib/redis';
 
 export async function POST(request: Request) {
-    const { name, courses = [] } = await request.json();
+    const { name, forename, mail, courses = [] } = await request.json();
     const professorId = uuidv4();
 
     await redis.hset(`professor:${professorId}`, {
         name,
+        forename,
+        mail: mail || '',
         courses: JSON.stringify(courses),
     });
 
@@ -71,16 +73,18 @@ export async function DELETE(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-    const { professorId, ...updates } = await request.json();
+    const { professorId, name, forename, mail, courses } = await request.json();
     const professor = await redis.hgetall(`professor:${professorId}`);
 
     if (Object.keys(professor).length === 0) {
         return NextResponse.json({ error: 'Professor not found' }, { status: 404 });
     }
 
-    if (updates.courses) {
-        updates.courses = JSON.stringify(updates.courses);
-    }
+    const updates: any = {};
+    if (name !== undefined) updates.name = name;
+    if (forename !== undefined) updates.forename = forename;
+    if (mail !== undefined) updates.mail = mail;
+    if (courses !== undefined) updates.courses = JSON.stringify(courses);
 
     await redis.hset(`professor:${professorId}`, updates);
 

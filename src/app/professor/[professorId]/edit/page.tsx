@@ -6,6 +6,8 @@ import { useRouter, useParams } from 'next/navigation';
 export default function EditProfessorPage() {
     const { professorId } = useParams();
     const [name, setName] = useState('');
+    const [forename, setForename] = useState('');
+    const [mail, setMail] = useState('');
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const router = useRouter();
@@ -18,7 +20,9 @@ export default function EditProfessorPage() {
                 return;
             }
             const data = await res.json();
-            setName(data.name);
+            setName(data.name || '');
+            setForename(data.forename || '');
+            setMail(data.mail || '');
             setLoading(false);
         }
         fetchProfessor();
@@ -30,7 +34,7 @@ export default function EditProfessorPage() {
         await fetch('/api/professors', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ professorId, name }),
+            body: JSON.stringify({ professorId, name, forename, mail }),
         });
         setSaving(false);
         router.push(`/professor/${professorId}`);
@@ -43,12 +47,28 @@ export default function EditProfessorPage() {
             <h1 className="text-2xl font-bold mb-4">Éditer le professeur</h1>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 <input
+                    name="forename"
+                    placeholder="Prénom"
+                    required
+                    value={forename}
+                    onChange={e => setForename(e.target.value)}
+                    className="border px-2 py-1 rounded"
+                />
+                <input
                     name="name"
                     placeholder="Nom"
                     required
                     value={name}
                     onChange={e => setName(e.target.value)}
                     className="border px-2 py-1 rounded"
+                />
+                <input
+                    name="mail"
+                    placeholder="Mail (optionnel)"
+                    value={mail}
+                    onChange={e => setMail(e.target.value)}
+                    className="border px-2 py-1 rounded"
+                    type="email"
                 />
                 <div className="flex gap-4 mt-4">
                     <button type="submit" className="bg-yellow-500 text-white px-4 py-2 rounded" disabled={saving}>

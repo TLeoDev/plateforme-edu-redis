@@ -6,6 +6,8 @@ import Link from 'next/link';
 interface Student {
     studentId: string;
     name: string;
+    forename: string;
+    mail?: string;
     courses: string[];
 }
 
@@ -57,6 +59,8 @@ export default function StudentsPage() {
                         <thead>
                         <tr className="bg-gray-100">
                             <th className="p-3 text-left">Nom</th>
+                            <th className="p-3 text-left">Prénom</th>
+                            <th className="p-3 text-left">Mail</th>
                             <th className="p-3 text-left">ID</th>
                             <th className="p-3 text-left">Actions</th>
                         </tr>
@@ -65,6 +69,9 @@ export default function StudentsPage() {
                         {students.map(student => (
                             <tr key={student.studentId} className="border-t">
                                 <td className="p-3">{student.name}</td>
+                                <td className="p-3">{student.forename}</td>
+                                <td className="p-3">{student.mail ||
+                                    <span className="italic text-gray-400">-</span>}</td>
                                 <td className="p-3">{student.studentId}</td>
                                 <td className="p-3 flex gap-2">
                                     <Link

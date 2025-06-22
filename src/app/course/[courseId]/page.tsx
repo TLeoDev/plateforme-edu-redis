@@ -17,19 +17,30 @@ interface Course {
 interface Student {
     studentId: string;
     name: string;
+    forename: string;
+    mail?: string;
+}
+
+interface Professor {
+    professorId: string;
+    name: string;
+    forename: string;
+    mail?: string;
 }
 
 export default function CoursePage() {
     const { courseId } = useParams();
     const [course, setCourse] = useState<Course | null>(null);
     const [students, setStudents] = useState<Student[]>([]);
+    const [professors, setProfessors] = useState<Professor[]>([]);
     const [loading, setLoading] = useState(true);
     const [showConfirm, setShowConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
-        async function fetchCourse() {
+        async function fetchData() {
+            // Récupère le cours
             const res = await fetch(`/api/courses?courseId=${courseId}`);
             if (!res.ok) {
                 router.push('/404');
@@ -38,14 +49,23 @@ export default function CoursePage() {
             const data = await res.json();
             setCourse(data);
 
+            // Récupère les étudiants inscrits
             if (data.students && data.students.length > 0) {
                 const resStudents = await fetch('/api/students');
                 const allStudents = await resStudents.json();
-                setStudents(allStudents.filter((s: Student) => data.students.includes(s.studentId)));
+                setStudents(
+                    allStudents.filter((s: Student) => data.students.includes(s.studentId))
+                );
             }
+
+            // Récupère les professeurs
+            const resProfs = await fetch('/api/professors');
+            const allProfs = await resProfs.json();
+            setProfessors(allProfs);
+
             setLoading(false);
         }
-        fetchCourse();
+        fetchData();
     }, [courseId, router]);
 
     const handleDelete = async () => {
@@ -56,6 +76,21 @@ export default function CoursePage() {
         router.push('/course');
     };
 
+    // Affiche le nom complet et le mail du professeur
+    const getTeacherDisplay = (teacherId: string) => {
+        if (!teacherId) return <span className="italic text-gray-400">Aucun</span>;
+        const prof = professors.find(p => p.professorId === teacherId);
+        if (!prof) return <span className="italic text-gray-400">Aucun</span>;
+        return (
+            <span>
+                {prof.forename} {prof.name}
+                {prof.mail && (
+                    <span className="block text-xs text-gray-500">{prof.mail}</span>
+                )}
+            </span>
+        );
+    };
+
     if (loading) return <div>Chargement...</div>;
     if (!course) return <div>Cours non trouvé.</div>;
 
@@ -63,7 +98,7 @@ export default function CoursePage() {
         <div className="p-8 flex justify-center">
             <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-2xl">
                 <h1 className="text-2xl font-bold mb-4">{course.title}</h1>
-                <div className="mb-2"><b>Enseignant :</b> {course.teacher}</div>
+                <div className="mb-2"><b>Enseignant :</b> {getTeacherDisplay(course.teacher)}</div>
                 <div className="mb-2"><b>Niveau :</b> {course.level}</div>
                 <div className="mb-2"><b>Résumé :</b> {course.summary || <span className="italic text-gray-500">Aucun résumé</span>}</div>
                 <div className="mb-2">
@@ -75,14 +110,18 @@ export default function CoursePage() {
                         <table className="w-full border mt-2">
                             <thead>
                             <tr className="bg-gray-100">
+                                <th className="p-2 text-left">Prénom</th>
                                 <th className="p-2 text-left">Nom</th>
+                                <th className="p-2 text-left">Mail</th>
                                 <th className="p-2 text-left">ID</th>
                             </tr>
                             </thead>
                             <tbody>
                             {students.map(s => (
                                 <tr key={s.studentId} className="border-t">
+                                    <td className="p-2">{s.forename}</td>
                                     <td className="p-2">{s.name}</td>
+                                    <td className="p-2">{s.mail || <span className="italic text-gray-400">-</span>}</td>
                                     <td className="p-2">{s.studentId}</td>
                                 </tr>
                             ))}

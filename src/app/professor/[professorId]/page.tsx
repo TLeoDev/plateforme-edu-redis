@@ -6,6 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 interface Professor {
     professorId: string;
     name: string;
+    forename: string;
+    mail?: string;
     courses: string[];
 }
 
@@ -52,8 +54,15 @@ export default function ProfessorProfilePage() {
 
     return (
         <div className="p-8 max-w-xl mx-auto">
-            <h1 className="text-2xl font-bold mb-2">{professor.name}</h1>
-            <p><b>ID :</b> {professor.professorId}</p>
+            <h1 className="text-2xl font-bold mb-2">
+                {professor.forename} {professor.name}
+            </h1>
+            <p>
+                <b>Mail :</b> {professor.mail || <span className="italic text-gray-400">-</span>}
+            </p>
+            <p>
+                <b>ID :</b> {professor.professorId}
+            </p>
             <div className="my-4">
                 <b>Cours enseignés :</b>
                 <ul className="list-disc ml-6">

@@ -6,6 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 interface Student {
     studentId: string;
     name: string;
+    forename: string;
+    mail?: string;
     courses: string[];
 }
 
@@ -14,11 +16,6 @@ interface Course {
     title: string;
     teacher?: string;
     teacherName?: string;
-}
-
-interface Professor {
-    professorId: string;
-    name: string;
 }
 
 export default function StudentProfilePage() {
@@ -40,23 +37,10 @@ export default function StudentProfilePage() {
             setStudent(data);
 
             if (data.courses.length > 0) {
-                const [resCourses, resProfs] = await Promise.all([
-                    fetch('/api/courses'),
-                    fetch('/api/professors')
-                ]);
+                // Récupère les infos des cours
+                const resCourses = await fetch('/api/courses');
                 const allCourses = await resCourses.json();
-                const allProfs = await resProfs.json();
-
-                // Ajoute le nom du prof à chaque cours
-                const coursesWithProf = allCourses
-                    .filter((c: Course) => data.courses.includes(c.courseId))
-                    .map((c: Course) => ({
-                        ...c,
-                        teacherName: c.teacher
-                            ? (allProfs.find((p: Professor) => p.professorId === c.teacher)?.name || c.teacher)
-                            : null
-                    }));
-                setCourses(coursesWithProf);
+                setCourses(allCourses.filter((c: Course) => data.courses.includes(c.courseId)));
             }
             setLoading(false);
         }
@@ -74,7 +58,8 @@ export default function StudentProfilePage() {
 
     return (
         <div className="p-8 max-w-xl mx-auto">
-            <h1 className="text-2xl font-bold mb-2">{student.name}</h1>
+            <h1 className="text-2xl font-bold mb-2">{student.forename} {student.name}</h1>
+            <p><b>Mail :</b> {student.mail || <span className="italic text-gray-400">-</span>}</p>
             <p><b>ID :</b> {student.studentId}</p>
             <div className="my-4">
                 <b>Cours inscrits :</b>
@@ -94,10 +79,7 @@ export default function StudentProfilePage() {
                                     <td className="p-2">{c.title}</td>
                                     <td className="p-2">{c.courseId}</td>
                                     <td className="p-2">
-                                        {c.teacherName
-                                            ? c.teacherName
-                                            : <span className="italic text-gray-400">Aucun</span>
-                                        }
+                                        {c.teacherName || c.teacher || <span className="italic text-gray-400">-</span>}
                                     </td>
                                 </tr>
                             ))}

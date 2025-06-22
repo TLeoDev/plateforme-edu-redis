@@ -18,6 +18,8 @@ interface Course {
 interface Professor {
     professorId: string;
     name: string;
+    forename: string;
+    mail?: string;
 }
 
 export default function CoursesPage() {
@@ -86,11 +88,19 @@ export default function CoursesPage() {
         }
     };
 
-    // Trouve le nom du professeur à partir de son ID
-    const getTeacherName = (teacherId: string) => {
-        if (!teacherId) return "Aucun";
+    // Affiche le nom complet et le mail du professeur
+    const getTeacherDisplay = (teacherId: string) => {
+        if (!teacherId) return <span className="italic text-gray-400">Aucun</span>;
         const prof = professors.find(p => p.professorId === teacherId);
-        return prof ? prof.name : "Aucun";
+        if (!prof) return <span className="italic text-gray-400">Aucun</span>;
+        return (
+            <span>
+                {prof.forename} {prof.name}
+                {prof.mail && (
+                    <span className="block text-xs text-gray-500">{prof.mail}</span>
+                )}
+            </span>
+        );
     };
 
     // Utilitaire pour label flottant
@@ -190,7 +200,7 @@ export default function CoursesPage() {
                     {courses.map(course => (
                         <tr key={course.courseId} className="border-t">
                             <td className="p-2 text-left">{course.title}</td>
-                            <td className="p-2 text-left">{getTeacherName(course.teacher)}</td>
+                            <td className="p-2 text-left">{getTeacherDisplay(course.teacher)}</td>
                             <td className="p-2 text-left">{course.level}</td>
                             <td className="p-2 text-left">
                                 {(course.placesAvailable ?? 0)}/{course.placesTotal ?? 0}

@@ -7,6 +7,8 @@ import { useToast } from '@/components/ToastContext';
 interface Professor {
     professorId: string;
     name: string;
+    forename: string;
+    mail?: string;
     courses: string[];
 }
 
@@ -60,7 +62,9 @@ export default function ProfessorsPage() {
                     <table className="w-full border">
                         <thead>
                         <tr className="bg-gray-100">
+                            <th className="p-3 text-left">Prénom</th>
                             <th className="p-3 text-left">Nom</th>
+                            <th className="p-3 text-left">Mail</th>
                             <th className="p-3 text-left">ID</th>
                             <th className="p-3 text-left">Cours</th>
                             <th className="p-3 text-left">Actions</th>
@@ -69,7 +73,9 @@ export default function ProfessorsPage() {
                         <tbody>
                         {professors.map(prof => (
                             <tr key={prof.professorId} className="border-t">
+                                <td className="p-3">{prof.forename}</td>
                                 <td className="p-3">{prof.name}</td>
+                                <td className="p-3">{prof.mail || <span className="italic text-gray-400">-</span>}</td>
                                 <td className="p-3">{prof.professorId}</td>
                                 <td className="p-3">
                                     {prof.courses && prof.courses.length > 0

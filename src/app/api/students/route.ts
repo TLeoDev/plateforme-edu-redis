@@ -1,19 +1,20 @@
-//api/students/route.ts
+// src/app/api/students/route.ts
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import redis from '@/lib/redis';
 
 export async function POST(request: Request) {
-    const { name, courses = [] } = await request.json();
+    const { name, forename, mail, courses = [] } = await request.json();
     const studentId = uuidv4();
 
-    // Création de l'étudiant
     await redis.hset(`student:${studentId}`, {
         name,
+        forename,
+        mail: mail || '',
         courses: JSON.stringify(courses),
     });
 
-    // Pour chaque cours, ajouter l'étudiant à la liste des étudiants du cours
+    // Ajoute l'étudiant aux cours sélectionnés
     for (const courseId of courses) {
         const courseKey = `course:${courseId}`;
         const course = await redis.hgetall(courseKey);
@@ -30,49 +31,6 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ message: 'Student created', studentId });
-}
-
-export async function PUT(request: Request) {
-    const COURSE_TTL_SECONDS = 86400; // 1 jour
-    const { studentId, courseId } = await request.json();
-    const course = await redis.hgetall(`course:${courseId}`);
-
-    if (Object.keys(course).length === 0) {
-        return NextResponse.json({ error: 'Course not found' }, { status: 404 });
-    }
-
-    if (parseInt(course.placesAvailable) <= 0) {
-        return NextResponse.json({ error: 'No places available' }, { status: 400 });
-    }
-
-    // Met à jour les cours de l'étudiant
-    const student = await redis.hgetall(`student:${studentId}`);
-    const courses = JSON.parse(student.courses || '[]');
-    if (!courses.includes(courseId)) {
-        courses.push(courseId);
-    }
-
-    await redis.hset(`student:${studentId}`, {
-        ...student,
-        courses: JSON.stringify(courses),
-    });
-
-    // Met à jour la liste des étudiants inscrits dans le cours
-    const studentsList = JSON.parse(course.students || '[]');
-    if (!studentsList.includes(studentId)) {
-        studentsList.push(studentId);
-    }
-
-    await redis.hset(`course:${courseId}`, {
-        ...course,
-        placesAvailable: (parseInt(course.placesAvailable) - 1).toString(),
-        students: JSON.stringify(studentsList),
-    });
-
-    // Rafraîchit le TTL du cours
-    await redis.expire(`course:${courseId}`, COURSE_TTL_SECONDS);
-
-    return NextResponse.json({ message: 'Student enrolled in course' });
 }
 
 export async function GET(request: Request) {
@@ -95,7 +53,6 @@ export async function GET(request: Request) {
         for (const key of keys) {
             const student = await redis.hgetall(key);
             student.courses = JSON.parse(student.courses || '[]');
-            // Ajout de l'id extrait de la clé
             const id = key.split(':')[1];
             students.push({ studentId: id, ...student });
         }
@@ -105,7 +62,7 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-    const { studentId, name, courses: newCourses } = await request.json();
+    const { studentId, name, forename, mail, courses: newCourses } = await request.json();
     const studentKey = `student:${studentId}`;
     const student = await redis.hgetall(studentKey);
 
@@ -118,6 +75,8 @@ export async function PATCH(request: Request) {
     // Met à jour l'étudiant
     await redis.hset(studentKey, {
         name,
+        forename,
+        mail: mail || '',
         courses: JSON.stringify(newCourses),
     });
 
@@ -138,6 +97,8 @@ export async function PATCH(request: Request) {
                     (Number(course.placesAvailable) || Number(course.placesTotal) || 0) - 1
                 ),
             });
+            // Rafraîchit le TTL du cours à chaque inscription
+            await redis.expire(courseKey, 86400);
         }
     }
     for (const courseId of removed) {
