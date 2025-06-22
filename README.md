@@ -31,7 +31,7 @@ Installation du projet
 Cloner le dépôt :
 
 ```bash
-git clone <url-du-repo>
+git clone https://github.com/TLeoDev/plateforme-edu-redis.git
 cd plateforme-edu
 ```
 

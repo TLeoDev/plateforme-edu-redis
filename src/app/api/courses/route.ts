@@ -1,14 +1,17 @@
-// src/app/api/courses/route.ts
+//API REST pour gérer les cours avec Redis (CRUD, TTL, news, recherche)
+
 import { NextResponse } from 'next/server';
 import redis from '@/lib/redis';
 import { v4 as uuidv4 } from 'uuid';
 
-const COURSE_TTL_SECONDS = 86400; // 1 jour
+const COURSE_TTL_SECONDS = 86400; // 1 jour en second (utilisé pour le TTL dans la request)
 
 export async function POST(request: Request) {
+    // on récupère les info dans la route pour le cours à créer
     const { title, teacher, level, summary = '', placesTotal = 0, students = [] } = await request.json();
     const courseId = uuidv4();
 
+    // on stoque le cours dans redis (hahs)
     await redis.hset(`course:${courseId}`, {
         title,
         teacher,
@@ -18,9 +21,10 @@ export async function POST(request: Request) {
         students: JSON.stringify(students),
     });
 
+    // on ajoute l'expiration automatique du cours (avec la variable constante déclaré en haut du fichier (1jour))
     await redis.expire(`course:${courseId}`, COURSE_TTL_SECONDS);
 
-    // --- Ajout du cours à la liste du professeur ---
+    // on ajoute le cours à la liste des cours du professeur
     if (teacher) {
         const profKey = `professor:${teacher}`;
         const professor = await redis.hgetall(profKey);
@@ -33,9 +37,8 @@ export async function POST(request: Request) {
             await redis.hset(profKey, { ...professor, courses: JSON.stringify(courses) });
         }
     }
-    // ------------------------------------------------
 
-    // --- Publie une news sur la création du cours ---
+    // Publish une news pour la création d'un nouveau cours
     const news = {
         courseId,
         message: `Nouveau cours créé : ${title}`,
@@ -44,12 +47,12 @@ export async function POST(request: Request) {
     await redis.lpush('news', JSON.stringify(news));
     await redis.publish(`course:news:${courseId}`, JSON.stringify(news));
     await redis.publish('news:all', JSON.stringify(news));
-    // ------------------------------------------------
 
     return NextResponse.json({ message: 'Course added with expiration', courseId });
 }
 
 export async function GET(request: Request) {
+    // variables qui permettent de récupérer un cours précis ou la liste filtrée
     const url = new URL(request.url);
     const courseId = url.searchParams.get('courseId');
     const title = url.searchParams.get('title');
@@ -57,6 +60,7 @@ export async function GET(request: Request) {
     const level = url.searchParams.get('level');
 
     if (courseId) {
+        // cherche un cours avec son ID
         const course = await redis.hgetall(`course:${courseId}`);
         if (Object.keys(course).length === 0) {
             return NextResponse.json({ error: 'Course not found' }, { status: 404 });
@@ -72,6 +76,7 @@ export async function GET(request: Request) {
             placesAvailable,
         });
     } else {
+        // Récupère tous les cours de la base
         const keys = await redis.keys('course:*');
         let courses = [];
 
@@ -93,7 +98,7 @@ export async function GET(request: Request) {
             });
         }
 
-        // Filtrage selon les paramètres
+        // Filtrage selon les paramètres (tirte, prof ou niveau selon ce qui est demandé)
         if (title) {
             courses = courses.filter(c => c.title?.toLowerCase().includes(title.toLowerCase()));
         }
@@ -109,6 +114,7 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+    // met à jour un cours existant
     const { courseId, ...updates } = await request.json();
     const course = await redis.hgetall(`course:${courseId}`);
 
@@ -116,11 +122,11 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
 
-    // Synchronisation professeurs
+    // Synchronisation des profs si changement du prof
     const oldTeacher = course.teacher;
     const newTeacher = updates.teacher;
 
-    // Retirer le cours de l'ancien professeur si différent
+    //  retire le cours de la liste de l'ancien professeur
     if (oldTeacher && oldTeacher !== newTeacher) {
         const oldProfKey = `professor:${oldTeacher}`;
         const oldProf = await redis.hgetall(oldProfKey);
@@ -131,7 +137,7 @@ export async function PUT(request: Request) {
         }
     }
 
-    // Ajouter le cours au nouveau professeur si différent
+    // Ajoute le cour à la liste du nouveau prof si besoin
     if (newTeacher && oldTeacher !== newTeacher) {
         const newProfKey = `professor:${newTeacher}`;
         const newProf = await redis.hgetall(newProfKey);
@@ -145,7 +151,7 @@ export async function PUT(request: Request) {
         }
     }
 
-    // Mise à jour des étudiants
+    // on vérifie qu'on ne réduit pas le nombre de places sosu le nombre d'inscrits (sert à update si par exemple un étudiant est supprimé et était inscrit à un cours)
     const students = course.students ? JSON.parse(course.students) : [];
     const newPlacesTotal = updates.placesTotal !== undefined ? Number(updates.placesTotal) : parseInt(course.placesTotal ?? '0');
 
@@ -159,14 +165,14 @@ export async function PUT(request: Request) {
         updates.students = JSON.stringify(updates.students);
     }
 
-    // Met à jour le cours
+    // effectue la mise à jour du cours dans redis
     await redis.hset(`course:${courseId}`, {
         ...course,
         ...updates,
         placesTotal: newPlacesTotal.toString(),
     });
 
-    // --- Publie une news sur la modification du cours ---
+    // publish d'une news pour la modification du cours
     const news = {
         courseId,
         message: `Le cours "${updates.title || course.title}" a été mis à jour.`,
@@ -175,12 +181,12 @@ export async function PUT(request: Request) {
     await redis.lpush('news', JSON.stringify(news));
     await redis.publish(`course:news:${courseId}`, JSON.stringify(news));
     await redis.publish('news:all', JSON.stringify(news));
-    // ---------------------------------------------------
 
     return NextResponse.json({ message: 'Course updated' });
 }
 
 export async function DELETE(request: Request) {
+    // supprimme un cours (et met à jours les infos du professeur concerné)
     const url = new URL(request.url);
     const courseId = url.searchParams.get('courseId');
     if (!courseId) {
@@ -193,7 +199,7 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 });
     }
 
-    // Met à jour la liste des cours du professeur
+    // Met à jour la liste des cours du prof
     if (course.teacher) {
         const profKey = `professor:${course.teacher}`;
         const professor = await redis.hgetall(profKey);
@@ -204,7 +210,7 @@ export async function DELETE(request: Request) {
         }
     }
 
-    // Supprime le cours
+    // Supprime le cours de la base redis
     const deleted = await redis.del(`course:${courseId}`);
     if (deleted === 0) {
         return NextResponse.json({ error: 'Course not found' }, { status: 404 });

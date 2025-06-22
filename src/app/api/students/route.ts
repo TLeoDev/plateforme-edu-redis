@@ -1,12 +1,14 @@
-// src/app/api/students/route.ts
+// API REST pour gérer les étudiants (CRUD, inscription/désinscription aux cours, synchronisation avec Redis)
 import { NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import redis from '@/lib/redis';
 
 export async function POST(request: Request) {
+    // creation d'un étudiant
     const { name, forename, mail, courses = [] } = await request.json();
     const studentId = uuidv4();
 
+    // on stoque les infos dans redis
     await redis.hset(`student:${studentId}`, {
         name,
         forename,
@@ -34,19 +36,23 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
+    // récupère un student ou la liste complète
     const url = new URL(request.url);
     const studentId = url.searchParams.get('studentId');
 
     if (studentId) {
+        // cherche un étudiant par ID (si renseigné dans la méthode)
         const student = await redis.hgetall(`student:${studentId}`);
 
         if (Object.keys(student).length === 0) {
             return NextResponse.json({ error: 'Student not found' }, { status: 404 });
         }
 
+        // parse les cours pour les retourner sous forme d'un tableau
         student.courses = JSON.parse(student.courses || '[]');
         return NextResponse.json({ studentId, ...student });
     } else {
+        // récupère tous les étudiants
         const keys = await redis.keys('student:*');
         const students = [];
 
@@ -62,6 +68,7 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+    // met à jour les infos d'un étudiant
     const { studentId, name, forename, mail, courses: newCourses } = await request.json();
     const studentKey = `student:${studentId}`;
     const student = await redis.hgetall(studentKey);
@@ -72,7 +79,7 @@ export async function PATCH(request: Request) {
 
     const oldCourses = JSON.parse(student.courses || '[]');
 
-    // Met à jour l'étudiant
+    // Met à jour l'étudiant dans redis
     await redis.hset(studentKey, {
         name,
         forename,
@@ -80,7 +87,7 @@ export async function PATCH(request: Request) {
         courses: JSON.stringify(newCourses),
     });
 
-    // Synchronise les cours
+    // Synchronise les cours (ajout / suppression)
     const added = newCourses.filter((c: string) => !oldCourses.includes(c));
     const removed = oldCourses.filter((c: string) => !newCourses.includes(c));
 
@@ -118,13 +125,14 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+    // supprime un étudiant
     const url = new URL(request.url);
     const studentId = url.searchParams.get('studentId');
     if (!studentId) {
         return NextResponse.json({ error: 'Missing studentId' }, { status: 400 });
     }
 
-    // Récupère les cours de l'étudiant
+    // Récupère les cours de l'étudiant pour les mettre à jour
     const student = await redis.hgetall(`student:${studentId}`);
     if (student && student.courses) {
         const courses = JSON.parse(student.courses);
@@ -147,6 +155,7 @@ export async function DELETE(request: Request) {
         }
     }
 
+    // suprime l'étudiant de redis
     const deleted = await redis.del(`student:${studentId}`);
     if (deleted === 0) {
         return NextResponse.json({ error: 'Student not found' }, { status: 404 });
