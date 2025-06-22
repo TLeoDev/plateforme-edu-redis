@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     let news = newsList.map((item) => JSON.parse(item));
 
     if (studentId) {
-        // Si un studentId est donné, filtre les news selon ses cours
+        // Si un studentId est donné on filtre les news selon ses cours
         const student = await redis.hgetall(`student:${studentId}`);
         const courses = student && student.courses ? JSON.parse(student.courses) : [];
         news = news.filter(n => courses.includes(n.courseId));
