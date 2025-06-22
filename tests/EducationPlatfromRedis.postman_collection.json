@@ -1,0 +1,488 @@
+{
+	"info": {
+		"_postman_id": "5c3b5907-9bcb-427d-b622-fd9a9e2908e3",
+		"name": "EducationPlatfromRedis",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32130206",
+		"_collection_link": "https://optifit-9809.postman.co/workspace/Optifit~cc4cfa10-b1af-4780-a382-77689c3977da/collection/32130206-5c3b5907-9bcb-427d-b622-fd9a9e2908e3?action=share&source=collection_link&creator=32130206"
+	},
+	"item": [
+		{
+			"name": "Courses",
+			"item": [
+				{
+					"name": "CreateCourse",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseId\": \"c1\",\n  \"title\": \"Mathématiques\",\n  \"teacher\": \"prof1\",\n  \"level\": \"débutant\",\n  \"summary\": \"Cours de base\",\n  \"placesAvailable\": 10,\n  \"students\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/courses",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"courses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetCourseById",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/courses?courseId=c1",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"courses"
+							],
+							"query": [
+								{
+									"key": "courseId",
+									"value": "c1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetCourses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/courses",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"courses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "EditCourse",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseId\": \"c1\",\n  \"title\": \"Maths avancés\",\n  \"placesAvailable\": 8\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ApiBasePaff}}api/courses",
+							"host": [
+								"{{ApiBasePaff}}api"
+							],
+							"path": [
+								"courses"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteCourse",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/courses?courseId=c1",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"courses"
+							],
+							"query": [
+								{
+									"key": "courseId",
+									"value": "c1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Student",
+			"item": [
+				{
+					"name": "CreateStudent",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "\n{\n  \"studentId\": \"s1\",\n  \"name\": \"Alice\",\n  \"courses\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ApiBasePaff}}api/students",
+							"host": [
+								"{{ApiBasePaff}}api"
+							],
+							"path": [
+								"students"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "EditStudent",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentId\": \"s1\",\n  \"courseId\": \"c1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ApiBasePaff}}api/students",
+							"host": [
+								"{{ApiBasePaff}}api"
+							],
+							"path": [
+								"students"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetStudentById",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/students?studentId=s1",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"students"
+							],
+							"query": [
+								{
+									"key": "studentId",
+									"value": "s1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetStudent",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/students",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"students"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateStudent",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"studentId\": \"s1\",\n  \"name\": \"Alice Dupont\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/students",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"students"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetStudentById",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/students?studentId=s1",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"students"
+							],
+							"query": [
+								{
+									"key": "studentId",
+									"value": "s1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Professor",
+			"item": [
+				{
+					"name": "CreateProfessor",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"professorId\": \"prof1\",\n  \"name\": \"M. Martin\",\n  \"courses\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ApiBasePaff}}api/professors",
+							"host": [
+								"{{ApiBasePaff}}api"
+							],
+							"path": [
+								"professors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetProfessorById",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/professors?professorId=prof1",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"professors"
+							],
+							"query": [
+								{
+									"key": "professorId",
+									"value": "prof1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetProfessor",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/professors",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"professors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateProfessor",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"professorId\": \"prof1\",\n  \"name\": \"M. Martin Dupont\",\n  \"courses\": [\"c1\", \"c2\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/professors",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"professors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetProfessorById",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/professors?professorId=prof1",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"professors"
+							],
+							"query": [
+								{
+									"key": "professorId",
+									"value": "prof1"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "News",
+			"item": [
+				{
+					"name": "publishNews",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"courseId\": \"62986d1d-3fda-438e-b5f0-5b71fdf7e80e\",\n  \"message\": \"Nouveau chapitre \"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/news",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"news"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetNews",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ApiBasePaff}}/api/news",
+							"host": [
+								"{{ApiBasePaff}}"
+							],
+							"path": [
+								"api",
+								"news"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "ApiBasePaff",
+			"value": "http://localhost:3000/",
+			"type": "string"
+		}
+	]
+}

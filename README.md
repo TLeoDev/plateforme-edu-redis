@@ -4,9 +4,9 @@
 
 ### Prérequis (lien clicable vers installation)
 
-- **[Node.js](https://nodejs.org/)** (v18 ou supérieur recommandé)
+- **[Node.js](https://nodejs.org/)** (v18 ou + )
 - **[npm](https://www.npmjs.com/get-npm)** (installé avec Node.js)
-- **[Redis](https://redis.io/download/)** (v6 ou supérieur)
+- **[Redis](https://redis.io/download/)** (v6 ou +)
 
 ### Installation de Redis
 
@@ -39,6 +39,8 @@ Installer les dépendances :
 ```bash
 npm install
 ```
+
+Avant de lancer l'application, s'assurer d'avoir mis le bon port et modifié celui ci au besoin dans src/lib/redis.ts ce fichier permet d'interfacer la connexion à redis pour pouvoir l'utiliser partout dans le frontend.
 
 Lancer l’application :
 ```bash
@@ -74,4 +76,17 @@ L’application sera accessible sur http://localhost:3000.
   Configuration TypeScript (notamment l’alias `@/lib/redis` utilisé côté Next.js).
 
 ---
+
+
+## Tests postman : 
+- Il est possible de tester les requetes de l'api qui utilise les données de redis, sans forcément passer par l'interface web, j'ai mis dans le dossier tests/ un fichier `EducationPlatformRedis.postman_collection.json` qui peux être importer dans l'outil postman dans la partie collections -> import 
+- Pour utiliser cette librairie il faut tout de même configurer l'application comme expliquer précédemment et lancer l'application avec
+
+```bash
+npm run dev
+```
+
+mais ensuite sans utiliser l'interface web, on peux tester les requêtes avec l'outil.
+
+PS : attention le basePath ne sera peux être pas le bon si vous modifiés le port dans les configuration du projet.
 
